@@ -40,7 +40,7 @@ public class HistoryActivity extends AppCompatActivity implements AdapterView.On
         mListView = (ListView) findViewById(R.id.my_list_view);
         setSupportActionBar(toolbar);
         setTitle("历史记录");
-        toolbar.setNavigationIcon(android.R.drawable.ic_media_next);
+        toolbar.setNavigationIcon(android.R.drawable.ic_media_previous);
         mFileName = FileUtils.getFileList(PATH_SAVE_AUDIO);
         ArrayAdapter<String> mAdapter = new ArrayAdapter<>(this, android.R.layout.simple_expandable_list_item_1,mFileName);
         mListView.setAdapter(mAdapter);

@@ -30,6 +30,7 @@ public class MainActivity extends AppCompatActivity {
     private AudioRecordDemo mAudioRecord;
     public final String PATH_SAVE_AUDIO = Environment.getExternalStorageDirectory().getPath() + "/Hans/Audio";
     private String audioname;
+    private boolean isNight = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,7 +39,8 @@ public class MainActivity extends AppCompatActivity {
         value = (TextView) findViewById(R.id.value);
         mDialView = (DialView) findViewById(R.id.mdial_view);
         mLineChartView = (LineChartView) findViewById(R.id.mLineChartView);
-        mDialView.setIsNight(true);
+        mDialView.setIsNight(isNight);
+        mLineChartView.setIsNight(isNight);
         initView();
 
     }
@@ -74,6 +76,11 @@ public class MainActivity extends AppCompatActivity {
                     mAudioRecord.stopRecord();
                 }
                 break;
+            case R.id.setting:
+                isNight = !isNight;
+                mDialView.setIsNight(isNight);
+                mLineChartView.setIsNight(isNight);
+                break;
         }
         return true;
     }
@@ -85,7 +92,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void init() {
-        audioname = FormatDateUtils.getCurrentDate("yyyy-MM-dd") + ".txt";
+        audioname = FormatDateUtils.getCurrentDate("yyyy-MM-dd HH:mm") + ".txt";
         FileUtils.InitFilePath(PATH_SAVE_AUDIO + "/" + audioname);
         mAudioRecord = AudioRecordDemo.getInstance();
         mAudioRecord.setRecordListenner(new AudioRecordListenner() {

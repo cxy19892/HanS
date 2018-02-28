@@ -9,7 +9,6 @@ import android.graphics.Shader;
 import android.text.TextPaint;
 import android.text.TextUtils;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.VelocityTracker;
 import android.view.View;
@@ -20,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
+ * 表盘
  * Created by hasee on 2017/11/6.
  */
 public class LineChartView extends View{
@@ -29,7 +29,11 @@ public class LineChartView extends View{
     private int PointerColor = 0xffff0000;
     private int ScaleColor = 0xff000000;
     private int BorderLineColor = 0xEE1C1C1C;
-
+    /*private int BgColor = 0xEE455A64;
+    private int TvColor = 0xFFCFD8DC;
+    private int PointerColor = 0xff8B2323;
+    private int ScaleColor = 0xFF757575;
+    private int BorderLineColor = 0xEECD2626;*/
     private int width;
     private int height;
     private int vleft;
@@ -46,7 +50,7 @@ public class LineChartView extends View{
 
     private List<HansBean> mlist = new ArrayList<>();
 
-    private float offsetX;
+    private float offsetX = 0;
     private float oldX;
     private float startX;
     private float startY;
@@ -57,7 +61,9 @@ public class LineChartView extends View{
     private String lastTime;
 
 
-    private static final int[] SECTION_COLORS = {Color.RED,Color.RED};
+    private static final int[] SECTION_COLORS_DAYS = {0xFF3F51B5,0xFF3F51B5};
+    private static final int[] SECTION_COLORS_NIGHT = {0xFFF57C00,0xFFF57C00};
+    private int[] SECTION_COLORS = SECTION_COLORS_DAYS;
 
     public LineChartView(Context context) {
         super(context);
@@ -82,6 +88,26 @@ public class LineChartView extends View{
         this.mlist = mlist;
         invalidate();
     }
+
+    public void setIsNight(boolean isnight){
+        if(isnight){
+            BgColor = 0xFFBDBDBD;
+            TvColor = 0xFFCFD8DC;
+            PointerColor = 0xff8B2323;
+            ScaleColor = 0xFF212121;
+            BorderLineColor = 0xEECD2626;
+            SECTION_COLORS = SECTION_COLORS_NIGHT;
+        }else{
+            BgColor = 0xffffffff;
+            TvColor = 0xff000000;
+            PointerColor = 0xffff0000;
+            ScaleColor = 0xff000000;
+            BorderLineColor = 0xEE1C1C1C;
+            SECTION_COLORS = SECTION_COLORS_DAYS;
+        }
+        initPaint();
+        postInvalidate();
+    }
     
     public void addData(HansBean data){
         isRecord = true;
@@ -102,9 +128,9 @@ public class LineChartView extends View{
         LinsPaint.setStrokeWidth(2);
 
         ScalePaint = new Paint();
-        LinsPaint.setAntiAlias(true);
-        LinsPaint.setStrokeWidth(1);
-        LinsPaint.setColor(ScaleColor);
+        ScalePaint.setAntiAlias(true);
+        ScalePaint.setStrokeWidth(1);
+        ScalePaint.setColor(ScaleColor);
 
         tvPaint = new TextPaint();
         tvPaint.setAntiAlias(true);
@@ -155,6 +181,7 @@ public class LineChartView extends View{
                 getParent().requestDisallowInterceptTouchEvent(true);
                 velocityTracker = VelocityTracker.obtain();
                 startMove = true;
+//                Log.d("chen", "dispatchTouchEvent: ACTION_DOWN offsetX="+offsetX);
                 break;
             case MotionEvent.ACTION_MOVE:
                 float rawX = event.getX();
@@ -163,28 +190,30 @@ public class LineChartView extends View{
                 velocityTracker.computeCurrentVelocity(1000);
                 float deltaX=rawX - startX;
                 float deltaY=rawY - startY;
-                if(Math.abs(deltaX) < Math.abs(deltaY) * 5){
+                if(Math.abs(deltaX) < Math.abs(deltaY)){
                     getParent().requestDisallowInterceptTouchEvent(false);
                 }else {
                     if (mlist != null && mlist.size()*2 > (width - 10)) {
-                        /*if (offsetX < (width - 10) - mlist.size()*2) {
-                            offsetX = (width - 10) - mlist.size()*2;
-                        }*/
-//                        offsetLeftAndRight((int) deltaX);
-                        if ((rawX - oldX) < 0)
-                            offsetX += deltaX;
-                        else
-                            offsetX -= deltaX;
-//                        offsetX -= deltaX;
+                        if ((rawX - oldX) < 0) {
+                            offsetX -= Math.abs(deltaX) * 10;
+//                            Log.d("chen", "dispatchTouchEvent: 向左滑"+ (- mlist.size()* 2));
+                        }
+                        else {
+                            offsetX += Math.abs(deltaX) * 10;
+                        }
+                        if(offsetX < - mlist.size()* 2+ width){
+                            offsetX = - mlist.size()* 2 + width;
+                        }
                         invalidate(cleft, vtop, vright, vbottom);
-//                        postInvalidateOnAnimation();
+//                        scrollBy((int)-deltaX,0);
                     } else {
                         offsetX = 0;
                     }
                     if (offsetX > 0)
                         offsetX = 0;
-                    Log.d("chen", "dispatchTouchEvent: offsetX="+offsetX);
+//                    Log.d("chen", "dispatchTouchEvent: offsetX="+offsetX);
                     startX = rawX;
+                    startY = rawY;
                 }
                 break;
             case MotionEvent.ACTION_CANCEL:
@@ -204,7 +233,50 @@ public class LineChartView extends View{
     }
 
     private void drawChart(Canvas canvas){
-        for (int i = 0; i < mlist.size(); i++) {
+        if(!isRecord && offsetX / 2 < mlist.size()){
+            for (int i = (int) -(offsetX / 2); i < ((offsetX / 2 + width * 9 /20 < mlist.size()) ? (- offsetX / 2 + width * 9 /20) : mlist.size()); i++) {
+//                Log.d("chen", "if drawChart: i = "+i);
+                LinearGradient linearGradient1 = new LinearGradient(i*2 + offsetX, mlist.get(i).getValue() * cbottom / 100, i*2 + offsetX, cbottom, SECTION_COLORS, null,
+                        Shader.TileMode.REPEAT);
+                LinsPaint.setShader(linearGradient1);
+                canvas.drawLine(cleft + i*2  + offsetX, cbottom - (mlist.get(i).getValue() * cbottom / 100), cleft + i*2 + offsetX, cbottom, LinsPaint);
+                if(!TextUtils.equals(lastTime, mlist.get(i).getTime())) {
+                    canvas.drawText(mlist.get(i).getTime(), cleft + i*2 + offsetX, height - height / 20, tvPaint);
+                    lastTime = mlist.get(i).getTime();
+                }
+            }
+        }else if(isRecord) {
+            if (mlist.size()*2 < width * 9 / 10) {
+                for (int i = 0; i < mlist.size(); i++) {
+//                    Log.d("chen", "drawChart: not fill offsetX="+offsetX+"mlist.size()="+mlist.size()+"width * 9 / 10="+width * 9 / 10+"  ------"+i);
+                    LinearGradient linearGradient1 = new LinearGradient(i * 2 + offsetX, mlist.get(i).getValue() * cbottom / 100, i * 2 + offsetX, cbottom, SECTION_COLORS, null,
+                            Shader.TileMode.REPEAT);
+                    LinsPaint.setShader(linearGradient1);
+                    canvas.drawLine(cleft + i * 2 + offsetX, cbottom - (mlist.get(i).getValue() * cbottom / 100), cleft + i * 2 + offsetX, cbottom, LinsPaint);
+                    if (!TextUtils.equals(lastTime, mlist.get(i).getTime())) {
+                        canvas.drawText(mlist.get(i).getTime(), cleft + i * 2 + offsetX, height - height / 20, tvPaint);
+                        lastTime = mlist.get(i).getTime();
+                    }
+                }
+            }else{
+                for (int i = (int) (mlist.size()*2 - width * 9 / 10 + offsetX); i < mlist.size(); i++) {
+//                    Log.d("chen", "drawChart: fill offsetX="+offsetX+"  ------"+i);
+                    LinearGradient linearGradient1 = new LinearGradient(i * 2 + offsetX, mlist.get(i).getValue() * cbottom / 100, i * 2 + offsetX, cbottom, SECTION_COLORS, null,
+                            Shader.TileMode.REPEAT);
+                    LinsPaint.setShader(linearGradient1);
+                    if (!startMove) {
+                        offsetX = width * 9 / 10 /*10 + width - cleft*/ - mlist.size() * 2;
+                    }
+                    canvas.drawLine(cleft + i * 2 + offsetX, cbottom - (mlist.get(i).getValue() * cbottom / 100), cleft + i * 2 + offsetX, cbottom, LinsPaint);
+                    if (!TextUtils.equals(lastTime, mlist.get(i).getTime())) {
+                        canvas.drawText(mlist.get(i).getTime(), cleft + i * 2 + offsetX, height - height / 20, tvPaint);
+                        lastTime = mlist.get(i).getTime();
+                    }
+                }
+            }
+
+        }
+        /*for (int i = 0; i < mlist.size(); i++) {
             LinearGradient linearGradient1 = new LinearGradient(i*2 + offsetX, mlist.get(i).getValue() * cbottom / 120, i*2 + offsetX, cbottom, SECTION_COLORS, null,
                     Shader.TileMode.REPEAT);
             LinsPaint.setShader(linearGradient1);
@@ -219,7 +291,7 @@ public class LineChartView extends View{
                 canvas.drawText(mlist.get(i).getTime(), cleft + i*2 + offsetX, height - height / 20, tvPaint);
                 lastTime = mlist.get(i).getTime();
             }
-        }
+        }*/
     }
 
     private void drawScal(Canvas canvas){
@@ -227,9 +299,9 @@ public class LineChartView extends View{
         canvas.drawLine(width / 10, height - height/10, width, height - height/10, ScalePaint);
         canvas.drawLine(width / 10, 0, width / 10, height - height/10, ScalePaint);
         tvPaint.setColor(Color.BLACK);
-        for (int i = 0; i < 13; i++) {
-            canvas.drawText((i * 10) + "db", width / 20, cbottom - i * (cbottom / 12), tvPaint);
-            canvas.drawLine(width / 10, cbottom - i * (cbottom / 12), width / 10 + 20, cbottom - i * (cbottom / 12), ScalePaint);
+        for (int i = 0; i < 11; i++) {
+            canvas.drawText((i * 10) + "db", width / 20, cbottom - i * (cbottom / 10), tvPaint);
+            canvas.drawLine(width / 10, cbottom - i * (cbottom / 10), width / 10 + 20, cbottom - i * (cbottom / 10), ScalePaint);
         }
         
     }

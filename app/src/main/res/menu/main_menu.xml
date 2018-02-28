@@ -12,4 +12,8 @@
         android:title="结束记录"
         android:id="@+id/stop">
     </item>
+    <item
+        android:title="设置"
+        android:id="@+id/setting">
+    </item>
 </menu>

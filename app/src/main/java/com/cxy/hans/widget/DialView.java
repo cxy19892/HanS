@@ -76,11 +76,16 @@ public class DialView extends View {
 
     public void setIsNight(boolean isnight){
         if(isnight){
-            BgColor = 0xEE000080;
+            /*BgColor = 0xEE000080;
             TvColor = 0xffC2C2C2;
             PointerColor = 0xff8B2323;
             ScaleColor = 0xffA6A6A6;
-            BorderLineColor = 0xEECD2626;
+            BorderLineColor = 0xEECD2626;*/
+            BgColor = 0xFFBDBDBD;
+            TvColor = 0xFF212121;
+            PointerColor = 0xEE303F9F;
+            ScaleColor = 0xFF212121;
+            BorderLineColor = 0xEE303F9F;
         }else{
             BgColor = 0xffffffff;
             TvColor = 0xff000000;
@@ -89,6 +94,7 @@ public class DialView extends View {
             BorderLineColor = 0xEE1C1C1C;
         }
         initView();
+        postInvalidate();
     }
 
     @Override
